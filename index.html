@@ -6,7 +6,7 @@
 <title>명함 스캐너</title>
 
 <link rel="manifest" href="./manifest.json" />
-<meta name="theme-color" content="#23303d" />
+<meta name="theme-color" content="#0d1f45" />
 
 <!-- iOS 홈 화면 추가용 -->
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -19,15 +19,15 @@
   html, body {
     margin: 0;
     padding: 0;
-    background: #eae5da;
     min-height: 100vh;
+    background: linear-gradient(155deg, #0a1a3a 0%, #123a5e 45%, #1f8298 100%);
+    background-attachment: fixed;
   }
   body {
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
+    padding: max(20px, env(safe-area-inset-top)) 14px max(20px, env(safe-area-inset-bottom));
   }
 </style>
 </head>
@@ -36,63 +36,95 @@
 <div id="card-scanner-root"></div>
 <style>
   #card-scanner-root {
-    --ink: #23303d;
-    --ink-soft: #5b6b78;
-    --paper: #eae5da;
-    --paper-deep: #ddd6c6;
-    --stamp: #9c6b30;
-    --stamp-deep: #7c5323;
-    --line: #c7bfab;
-    --danger: #a4453a;
-    font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+    --navy-deep: #0a1a3a;
+    --navy: #123a5e;
+    --teal: #1f8298;
+    --cyan: #4fd8e0;
+    --herb: #3bc48a;
+    --ink: #10233c;
+    --ink-soft: #5c7285;
+    --line: #d7e3e8;
+    --panel: rgba(255,255,255,0.96);
+    --danger: #d1483c;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
     color: var(--ink);
-    background: var(--paper);
     width: 100%;
-    max-width: 480px;
-    min-height: 100vh;
+    max-width: 460px;
     margin: 0 auto;
-    padding: 24px 18px 40px;
     box-sizing: border-box;
   }
   #card-scanner-root * { box-sizing: border-box; }
+  #card-scanner-root .panel {
+    background: var(--panel);
+    border-radius: 22px;
+    padding: 22px 18px 26px;
+    box-shadow: 0 18px 40px rgba(6,20,45,0.35);
+    backdrop-filter: blur(6px);
+  }
   #card-scanner-root .eyebrow-row {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 14px;
+    margin-bottom: 16px;
     border-bottom: 1px solid var(--line);
-    padding-bottom: 10px;
-    margin-bottom: 18px;
   }
+  #card-scanner-root .logo-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: linear-gradient(155deg, var(--navy-deep), var(--teal));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  #card-scanner-root .logo-badge svg { width: 22px; height: 22px; }
+  #card-scanner-root .title-block { flex: 1; }
   #card-scanner-root h1 {
-    font-size: 21px;
+    font-size: 18px;
     margin: 0;
-    letter-spacing: 0.2px;
-    font-weight: 600;
+    letter-spacing: -0.2px;
+    font-weight: 700;
+    color: var(--ink);
   }
   #card-scanner-root .stamp-tag {
-    font-family: 'Courier New', monospace;
+    display: inline-block;
     font-size: 10.5px;
-    color: var(--stamp-deep);
-    border: 1px solid var(--stamp-deep);
-    padding: 2px 6px;
-    border-radius: 3px;
-    transform: rotate(-2deg);
-    white-space: nowrap;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--teal);
+    background: rgba(31,130,152,0.1);
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-top: 3px;
   }
   #card-scanner-root .stage { display: none; }
   #card-scanner-root .stage.active { display: block; }
+  #card-scanner-root .scan-frame { position: relative; }
   #card-scanner-root .dropzone {
-    border: 1.5px dashed var(--stamp);
-    border-radius: 10px;
-    padding: 28px 16px;
+    position: relative;
+    border-radius: 16px;
+    padding: 34px 16px;
     text-align: center;
-    background: rgba(255,255,255,0.35);
+    background: linear-gradient(160deg, rgba(18,58,94,0.06), rgba(31,130,152,0.1));
     cursor: pointer;
     display: block;
+    overflow: hidden;
   }
-  #card-scanner-root .dropzone p.lead { font-size: 15.5px; margin: 0 0 4px; }
+  #card-scanner-root .dropzone .corner {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border: 0 solid var(--cyan);
+  }
+  #card-scanner-root .dropzone .corner.tl { top: 10px; left: 10px; border-top-width: 3px; border-left-width: 3px; border-radius: 6px 0 0 0; }
+  #card-scanner-root .dropzone .corner.tr { top: 10px; right: 10px; border-top-width: 3px; border-right-width: 3px; border-radius: 0 6px 0 0; }
+  #card-scanner-root .dropzone .corner.bl { bottom: 10px; left: 10px; border-bottom-width: 3px; border-left-width: 3px; border-radius: 0 0 0 6px; }
+  #card-scanner-root .dropzone .corner.br { bottom: 10px; right: 10px; border-bottom-width: 3px; border-right-width: 3px; border-radius: 0 0 6px 0; }
+  #card-scanner-root .dropzone .cam-icon { font-size: 104px; margin-bottom: 14px; }
+  #card-scanner-root .dropzone p.lead { font-size: 15px; margin: 0 0 4px; font-weight: 600; color: var(--ink); }
   #card-scanner-root .dropzone p.sub {
-    font-family: 'Courier New', monospace;
     font-size: 12px;
     color: var(--ink-soft);
     margin: 0;
@@ -100,78 +132,78 @@
   #card-scanner-root input[type=file] { display: none; }
   #card-scanner-root .preview-wrap {
     margin-top: 16px;
-    border-radius: 8px;
+    border-radius: 14px;
     overflow: hidden;
     border: 1px solid var(--line);
   }
   #card-scanner-root .preview-wrap img { width: 100%; display: block; }
   #card-scanner-root .primary-btn {
     width: 100%;
-    background: var(--ink);
-    color: var(--paper);
+    background: linear-gradient(135deg, var(--navy), var(--teal));
+    color: #fff;
     border: none;
-    border-radius: 8px;
-    padding: 13px;
+    border-radius: 12px;
+    padding: 14px;
     font-size: 15px;
     font-family: inherit;
-    font-weight: 600;
+    font-weight: 700;
     margin-top: 14px;
     cursor: pointer;
+    box-shadow: 0 8px 18px rgba(18,58,94,0.28);
   }
-  #card-scanner-root .primary-btn:disabled { opacity: 0.45; cursor: default; }
+  #card-scanner-root .primary-btn:disabled { opacity: 0.45; cursor: default; box-shadow: none; }
   #card-scanner-root .ghost-btn {
     width: 100%;
     background: transparent;
-    color: var(--ink-soft);
-    border: 1px solid var(--line);
-    border-radius: 8px;
+    color: var(--teal);
+    border: 1.5px solid rgba(31,130,152,0.35);
+    border-radius: 12px;
     padding: 11px;
     font-size: 13.5px;
-    font-family: 'Courier New', monospace;
-    margin-top: 8px;
+    font-weight: 600;
+    margin-top: 10px;
     cursor: pointer;
   }
-  #card-scanner-root .loading { text-align: center; padding: 30px 10px; }
+  #card-scanner-root .loading { text-align: center; padding: 34px 10px; }
   #card-scanner-root .loading .spinner {
-    width: 28px; height: 28px;
+    width: 30px; height: 30px;
     border: 3px solid var(--line);
-    border-top-color: var(--stamp);
+    border-top-color: var(--teal);
     border-radius: 50%;
     margin: 0 auto 14px;
     animation: cs-spin 0.8s linear infinite;
   }
   @keyframes cs-spin { to { transform: rotate(360deg); } }
   #card-scanner-root .loading p {
-    font-family: 'Courier New', monospace;
     font-size: 12.5px;
     color: var(--ink-soft);
   }
   #card-scanner-root .field-group { margin-bottom: 12px; }
   #card-scanner-root .field-group label {
     display: block;
-    font-family: 'Courier New', monospace;
-    font-size: 10.5px;
-    letter-spacing: 0.03em;
-    color: var(--stamp-deep);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--teal);
     margin-bottom: 4px;
   }
   #card-scanner-root .field-group input {
     width: 100%;
-    padding: 10px 10px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
+    padding: 11px 12px;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
     font-family: inherit;
     font-size: 14.5px;
     background: #fff;
     color: var(--ink);
   }
-  #card-scanner-root .field-group input:focus { outline: none; border-color: var(--stamp); }
+  #card-scanner-root .field-group input:focus { outline: none; border-color: var(--teal); }
   #card-scanner-root .multi-row { display: flex; gap: 8px; margin-bottom: 8px; }
   #card-scanner-root .multi-row input { flex: 1; }
   #card-scanner-root .multi-row button {
     background: transparent;
-    border: 1px solid var(--line);
-    border-radius: 6px;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
     color: var(--danger);
     font-size: 15px;
     width: 38px;
@@ -180,27 +212,36 @@
   #card-scanner-root .add-line {
     background: none;
     border: none;
-    color: var(--stamp-deep);
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
+    color: var(--teal);
+    font-size: 12.5px;
+    font-weight: 700;
     padding: 4px 0 10px;
     cursor: pointer;
   }
   #card-scanner-root .divider { border: none; border-top: 1px dashed var(--line); margin: 18px 0; }
   #card-scanner-root .error-box {
-    background: rgba(164,69,58,0.08);
+    background: rgba(209,72,60,0.08);
     border: 1px solid var(--danger);
     color: var(--danger);
     font-size: 13px;
     padding: 10px 12px;
-    border-radius: 8px;
+    border-radius: 10px;
     margin-top: 12px;
   }
-  #card-scanner-root .done-box { text-align: center; padding: 20px 10px 6px; }
-  #card-scanner-root .done-box .mark { font-size: 34px; margin-bottom: 6px; }
+  #card-scanner-root .done-box { text-align: center; padding: 22px 10px 6px; }
+  #card-scanner-root .done-box .mark {
+    font-size: 30px;
+    width: 56px;
+    height: 56px;
+    line-height: 56px;
+    margin: 0 auto 10px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--herb), var(--teal));
+    color: #fff;
+  }
   #card-scanner-root .done-box p { font-size: 14px; color: var(--ink-soft); margin: 4px 0 0; }
+  #card-scanner-root .done-box p:first-of-type { font-size: 16px; font-weight: 700; color: var(--ink); }
   #card-scanner-root .field-hint {
-    font-family: 'Courier New', monospace;
     font-size: 11px;
     color: var(--ink-soft);
     margin: -4px 0 14px;
@@ -211,17 +252,37 @@
   const root = document.getElementById('card-scanner-root');
 
   root.innerHTML = `
+  <div class="panel">
     <div class="eyebrow-row">
-      <h1>명함 스캐너</h1>
-      <span class="stamp-tag">SCAN &amp; SAVE</span>
+      <div class="logo-badge">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M13 13c-1.5-3 0-6 2-7" stroke="#8CF3E8" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M27 13c1.5-3 0-6-2-7" stroke="#8CF3E8" stroke-width="2.4" stroke-linecap="round"/>
+          <circle cx="20" cy="17" r="6.5" stroke="#ffffff" stroke-width="2.2"/>
+          <path d="M11 33c1-7 5-11 9-11s8 4 9 11" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M20 25c-2.5 2-3 5-2 8" stroke="#3bc48a" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M20 25c2.5 1.4 3.4 4 3 7" stroke="#3bc48a" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="title-block">
+        <h1>명함 스캐너</h1>
+        <span class="stamp-tag">AI 명함 인식 · 신농 에디션</span>
+      </div>
     </div>
 
     <div class="stage active" data-stage="upload">
       <label class="dropzone" id="cs-dropzone">
-        <p class="lead">명함 사진을 선택하거나 촬영하세요</p>
-        <p class="sub">JPG / PNG · 카메라 또는 앨범</p>
-        <input type="file" id="cs-file-input" accept="image/*" capture="environment" />
+        <span class="corner tl"></span>
+        <span class="corner tr"></span>
+        <span class="corner bl"></span>
+        <span class="corner br"></span>
+        <div class="cam-icon">🪪</div>
+        <p class="lead">앨범에서 명함 사진 선택</p>
+        <p class="sub">사진 보관함에서 선택</p>
+        <input type="file" id="cs-file-input-album" accept="image/*" />
       </label>
+      <button type="button" class="ghost-btn" id="cs-camera-btn">📷 카메라로 바로 촬영</button>
+      <input type="file" id="cs-file-input-camera" accept="image/*" capture="environment" style="display:none" />
       <div id="cs-preview-area"></div>
     </div>
 
@@ -240,10 +301,11 @@
       <div class="done-box">
         <div class="mark">✓</div>
         <p id="cs-done-name"></p>
-        <p>연락처 파일을 저장했습니다. 파일을 열면 전화 연락처에 추가할 수 있습니다.</p>
+        <p>연락처 미리보기가 열리면 오른쪽 위 "추가"를 눌러 저장하세요.</p>
       </div>
       <button class="primary-btn" id="cs-restart-btn" type="button">다른 명함 스캔하기</button>
     </div>
+  </div>
   `;
 
   const stages = {};
@@ -253,12 +315,13 @@
     stages[name].classList.add('active');
   }
 
-  const fileInput = root.querySelector('#cs-file-input');
+  const fileInputAlbum = root.querySelector('#cs-file-input-album');
+  const fileInputCamera = root.querySelector('#cs-file-input-camera');
   const previewArea = root.querySelector('#cs-preview-area');
   let imageBase64 = null;
   let imageMediaType = null;
 
-  fileInput.addEventListener('change', async (e) => {
+  function handleFileChange(e) {
     const file = e.target.files[0];
     if (!file) return;
     imageMediaType = file.type || 'image/jpeg';
@@ -273,7 +336,11 @@
       root.querySelector('#cs-scan-btn').addEventListener('click', runScan);
     };
     reader.readAsDataURL(file);
-  });
+  }
+
+  fileInputAlbum.addEventListener('change', handleFileChange);
+  fileInputCamera.addEventListener('change', handleFileChange);
+  root.querySelector('#cs-camera-btn').addEventListener('click', () => fileInputCamera.click());
 
   async function runScan() {
     showStage('loading');
@@ -351,11 +418,11 @@ phones의 label은 "휴대전화", "회사전화", "팩스" 중 문맥에 맞게
 
       <hr class="divider" />
 
-      <label style="display:block;font-family:'Courier New',monospace;font-size:10.5px;color:var(--stamp-deep);margin-bottom:6px;">전화번호</label>
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--teal);margin-bottom:6px;">전화번호</label>
       <div id="cs-phones"></div>
       <button type="button" class="add-line" id="cs-add-phone">+ 전화번호 추가</button>
 
-      <label style="display:block;font-family:'Courier New',monospace;font-size:10.5px;color:var(--stamp-deep);margin-bottom:6px;">이메일</label>
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--teal);margin-bottom:6px;">이메일</label>
       <div id="cs-emails"></div>
       <button type="button" class="add-line" id="cs-add-email">+ 이메일 추가</button>
 
@@ -371,7 +438,7 @@ phones의 label은 "휴대전화", "회사전화", "팩스" 중 문맥에 맞게
       </div>
 
       <p class="field-hint">읽은 내용이 틀리면 직접 수정한 뒤 저장하세요.</p>
-      <button type="submit" class="primary-btn">연락처 파일 만들기</button>
+      <button type="submit" class="primary-btn">연락처에 저장하기</button>
       <button type="button" class="ghost-btn" id="cs-back-btn">뒤로</button>
     `;
 
@@ -440,36 +507,39 @@ phones의 label은 "휴대전화", "회사전화", "팩스" 중 문맥에 맞게
     return 'CELL';
   }
 
+  function vEsc(s) {
+    return String(s || '')
+      .replace(/\\/g, '\\\\')
+      .replace(/\n/g, '\\n')
+      .replace(/,/g, '\\,')
+      .replace(/;/g, '\\;');
+  }
+
   function buildVCard({ name, company, title, address, website, phones, emails }) {
     const lines = ['BEGIN:VCARD', 'VERSION:3.0'];
-    lines.push(`N:;${name};;;`);
-    lines.push(`FN:${name}`);
-    if (company) lines.push(`ORG:${company}`);
-    if (title) lines.push(`TITLE:${title}`);
-    phones.forEach(p => { lines.push(`TEL;TYPE=${typeForLabel(p.label)}:${p.number}`); });
-    emails.forEach(e => { lines.push(`EMAIL:${e}`); });
-    if (address) lines.push(`ADR;TYPE=WORK:;;${address};;;;`);
-    if (website) lines.push(`URL:${website}`);
+    const safeName = vEsc(name);
+    lines.push(`N:;${safeName};;;`);
+    lines.push(`FN:${safeName}`);
+    if (company) lines.push(`ORG:${vEsc(company)}`);
+    if (title) lines.push(`TITLE:${vEsc(title)}`);
+    phones.forEach(p => { lines.push(`TEL;TYPE=${typeForLabel(p.label)}:${p.number.replace(/[^\d+#*]/g, m => m)}`); });
+    emails.forEach(e => { lines.push(`EMAIL;TYPE=INTERNET:${e.trim()}`); });
+    if (address) lines.push(`ADR;TYPE=WORK:;;${vEsc(address)};;;;`);
+    if (website) lines.push(`URL:${website.trim()}`);
     lines.push('END:VCARD');
     return lines.join('\r\n');
   }
 
   function downloadVCard(vcardText, name) {
-    const blob = new Blob([vcardText], { type: 'text/vcard;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${name || 'contact'}.vcf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    const dataUri = 'data:text/vcard;charset=utf-8,' + encodeURIComponent(vcardText);
+    window.open(dataUri, '_blank');
   }
 
   root.querySelector('#cs-restart-btn').addEventListener('click', () => {
     imageBase64 = null;
     previewArea.innerHTML = '';
-    fileInput.value = '';
+    fileInputAlbum.value = '';
+    fileInputCamera.value = '';
     showStage('upload');
   });
 })();
