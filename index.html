@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<title>명함 스캐너</title>
+
+<link rel="manifest" href="./manifest.json" />
+<meta name="theme-color" content="#23303d" />
+
+<!-- iOS 홈 화면 추가용 -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="명함스캐너" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+<link rel="icon" href="./icon-192.png" />
+
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #eae5da;
+    min-height: 100vh;
+  }
+  body {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+</style>
+</head>
+<body>
+
+<div id="card-scanner-root"></div>
+<style>
+  #card-scanner-root {
+    --ink: #23303d;
+    --ink-soft: #5b6b78;
+    --paper: #eae5da;
+    --paper-deep: #ddd6c6;
+    --stamp: #9c6b30;
+    --stamp-deep: #7c5323;
+    --line: #c7bfab;
+    --danger: #a4453a;
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+    color: var(--ink);
+    background: var(--paper);
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    margin: 0 auto;
+    padding: 24px 18px 40px;
+    box-sizing: border-box;
+  }
+  #card-scanner-root * { box-sizing: border-box; }
+  #card-scanner-root .eyebrow-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+  }
+  #card-scanner-root h1 {
+    font-size: 21px;
+    margin: 0;
+    letter-spacing: 0.2px;
+    font-weight: 600;
+  }
+  #card-scanner-root .stamp-tag {
+    font-family: 'Courier New', monospace;
+    font-size: 10.5px;
+    color: var(--stamp-deep);
+    border: 1px solid var(--stamp-deep);
+    padding: 2px 6px;
+    border-radius: 3px;
+    transform: rotate(-2deg);
+    white-space: nowrap;
+  }
+  #card-scanner-root .stage { display: none; }
+  #card-scanner-root .stage.active { display: block; }
+  #card-scanner-root .dropzone {
+    border: 1.5px dashed var(--stamp);
+    border-radius: 10px;
+    padding: 28px 16px;
+    text-align: center;
+    background: rgba(255,255,255,0.35);
+    cursor: pointer;
+    display: block;
+  }
+  #card-scanner-root .dropzone p.lead { font-size: 15.5px; margin: 0 0 4px; }
+  #card-scanner-root .dropzone p.sub {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  #card-scanner-root input[type=file] { display: none; }
+  #card-scanner-root .preview-wrap {
+    margin-top: 16px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  #card-scanner-root .preview-wrap img { width: 100%; display: block; }
+  #card-scanner-root .primary-btn {
+    width: 100%;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 8px;
+    padding: 13px;
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: 600;
+    margin-top: 14px;
+    cursor: pointer;
+  }
+  #card-scanner-root .primary-btn:disabled { opacity: 0.45; cursor: default; }
+  #card-scanner-root .ghost-btn {
+    width: 100%;
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 11px;
+    font-size: 13.5px;
+    font-family: 'Courier New', monospace;
+    margin-top: 8px;
+    cursor: pointer;
+  }
+  #card-scanner-root .loading { text-align: center; padding: 30px 10px; }
+  #card-scanner-root .loading .spinner {
+    width: 28px; height: 28px;
+    border: 3px solid var(--line);
+    border-top-color: var(--stamp);
+    border-radius: 50%;
+    margin: 0 auto 14px;
+    animation: cs-spin 0.8s linear infinite;
+  }
+  @keyframes cs-spin { to { transform: rotate(360deg); } }
+  #card-scanner-root .loading p {
+    font-family: 'Courier New', monospace;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+  #card-scanner-root .field-group { margin-bottom: 12px; }
+  #card-scanner-root .field-group label {
+    display: block;
+    font-family: 'Courier New', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.03em;
+    color: var(--stamp-deep);
+    margin-bottom: 4px;
+  }
+  #card-scanner-root .field-group input {
+    width: 100%;
+    padding: 10px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14.5px;
+    background: #fff;
+    color: var(--ink);
+  }
+  #card-scanner-root .field-group input:focus { outline: none; border-color: var(--stamp); }
+  #card-scanner-root .multi-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  #card-scanner-root .multi-row input { flex: 1; }
+  #card-scanner-root .multi-row button {
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    color: var(--danger);
+    font-size: 15px;
+    width: 38px;
+    cursor: pointer;
+  }
+  #card-scanner-root .add-line {
+    background: none;
+    border: none;
+    color: var(--stamp-deep);
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    padding: 4px 0 10px;
+    cursor: pointer;
+  }
+  #card-scanner-root .divider { border: none; border-top: 1px dashed var(--line); margin: 18px 0; }
+  #card-scanner-root .error-box {
+    background: rgba(164,69,58,0.08);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-top: 12px;
+  }
+  #card-scanner-root .done-box { text-align: center; padding: 20px 10px 6px; }
+  #card-scanner-root .done-box .mark { font-size: 34px; margin-bottom: 6px; }
+  #card-scanner-root .done-box p { font-size: 14px; color: var(--ink-soft); margin: 4px 0 0; }
+  #card-scanner-root .field-hint {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin: -4px 0 14px;
+  }
+</style>
+<script>
+(function () {
+  const root = document.getElementById('card-scanner-root');
+
+  root.innerHTML = `
+    <div class="eyebrow-row">
+      <h1>명함 스캐너</h1>
+      <span class="stamp-tag">SCAN &amp; SAVE</span>
+    </div>
+
+    <div class="stage active" data-stage="upload">
+      <label class="dropzone" id="cs-dropzone">
+        <p class="lead">명함 사진을 선택하거나 촬영하세요</p>
+        <p class="sub">JPG / PNG · 카메라 또는 앨범</p>
+        <input type="file" id="cs-file-input" accept="image/*" capture="environment" />
+      </label>
+      <div id="cs-preview-area"></div>
+    </div>
+
+    <div class="stage" data-stage="loading">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>명함 글자를 읽는 중...</p>
+      </div>
+    </div>
+
+    <div class="stage" data-stage="form">
+      <form id="cs-form"></form>
+    </div>
+
+    <div class="stage" data-stage="done">
+      <div class="done-box">
+        <div class="mark">✓</div>
+        <p id="cs-done-name"></p>
+        <p>연락처 파일을 저장했습니다. 파일을 열면 전화 연락처에 추가할 수 있습니다.</p>
+      </div>
+      <button class="primary-btn" id="cs-restart-btn" type="button">다른 명함 스캔하기</button>
+    </div>
+  `;
+
+  const stages = {};
+  root.querySelectorAll('.stage').forEach(s => { stages[s.dataset.stage] = s; });
+  function showStage(name) {
+    Object.values(stages).forEach(s => s.classList.remove('active'));
+    stages[name].classList.add('active');
+  }
+
+  const fileInput = root.querySelector('#cs-file-input');
+  const previewArea = root.querySelector('#cs-preview-area');
+  let imageBase64 = null;
+  let imageMediaType = null;
+
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    imageMediaType = file.type || 'image/jpeg';
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      imageBase64 = reader.result.split(',')[1];
+      previewArea.innerHTML = `
+        <div class="preview-wrap"><img src="${reader.result}" /></div>
+        <button class="primary-btn" id="cs-scan-btn" type="button">명함 읽기</button>
+      `;
+      root.querySelector('#cs-scan-btn').addEventListener('click', runScan);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  async function runScan() {
+    showStage('loading');
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'image',
+                  source: { type: 'base64', media_type: imageMediaType, data: imageBase64 }
+                },
+                {
+                  type: 'text',
+                  text: `이 명함 이미지를 읽고 정보를 아래 JSON 형식으로만 응답하세요. 다른 설명, 코드블록, 접두어 없이 순수 JSON만 출력하세요. 값이 없으면 빈 문자열이나 빈 배열로 두세요.
+{
+  "name": "",
+  "company": "",
+  "title": "",
+  "phones": [{"label": "휴대전화", "number": ""}],
+  "emails": [""],
+  "address": "",
+  "website": ""
+}
+phones의 label은 "휴대전화", "회사전화", "팩스" 중 문맥에 맞게 고르세요.`
+                }
+              ]
+            }
+          ]
+        })
+      });
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message || '분석 실패');
+      const text = data.content.map(b => b.text || '').join('').trim();
+      const clean = text.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+      const parsed = JSON.parse(clean);
+      renderForm(parsed);
+      showStage('form');
+    } catch (err) {
+      showStage('upload');
+      previewArea.insertAdjacentHTML('beforeend', `<div class="error-box">읽기에 실패했습니다: ${escapeHtml(err.message)}. 다시 시도해 주세요.</div>`);
+    }
+  }
+
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.innerText = s;
+    return d.innerHTML;
+  }
+
+  function renderForm(data) {
+    const form = root.querySelector('#cs-form');
+    const phones = (data.phones && data.phones.length) ? data.phones : [{ label: '휴대전화', number: '' }];
+    const emails = (data.emails && data.emails.length) ? data.emails : [''];
+
+    form.innerHTML = `
+      <div class="field-group">
+        <label>이름</label>
+        <input type="text" name="name" value="${escapeHtml(data.name || '')}" />
+      </div>
+      <div class="field-group">
+        <label>회사</label>
+        <input type="text" name="company" value="${escapeHtml(data.company || '')}" />
+      </div>
+      <div class="field-group">
+        <label>직함</label>
+        <input type="text" name="title" value="${escapeHtml(data.title || '')}" />
+      </div>
+
+      <hr class="divider" />
+
+      <label style="display:block;font-family:'Courier New',monospace;font-size:10.5px;color:var(--stamp-deep);margin-bottom:6px;">전화번호</label>
+      <div id="cs-phones"></div>
+      <button type="button" class="add-line" id="cs-add-phone">+ 전화번호 추가</button>
+
+      <label style="display:block;font-family:'Courier New',monospace;font-size:10.5px;color:var(--stamp-deep);margin-bottom:6px;">이메일</label>
+      <div id="cs-emails"></div>
+      <button type="button" class="add-line" id="cs-add-email">+ 이메일 추가</button>
+
+      <hr class="divider" />
+
+      <div class="field-group">
+        <label>주소</label>
+        <input type="text" name="address" value="${escapeHtml(data.address || '')}" />
+      </div>
+      <div class="field-group">
+        <label>웹사이트</label>
+        <input type="text" name="website" value="${escapeHtml(data.website || '')}" />
+      </div>
+
+      <p class="field-hint">읽은 내용이 틀리면 직접 수정한 뒤 저장하세요.</p>
+      <button type="submit" class="primary-btn">연락처 파일 만들기</button>
+      <button type="button" class="ghost-btn" id="cs-back-btn">뒤로</button>
+    `;
+
+    const phonesWrap = form.querySelector('#cs-phones');
+    const emailsWrap = form.querySelector('#cs-emails');
+
+    function addPhoneRow(label, number) {
+      const row = document.createElement('div');
+      row.className = 'multi-row';
+      row.innerHTML = `
+        <input type="text" class="phone-label" placeholder="구분 (예: 휴대전화)" value="${escapeHtml(label || '')}" style="flex:0.8" />
+        <input type="tel" class="phone-number" placeholder="번호" value="${escapeHtml(number || '')}" />
+        <button type="button" class="remove-row">×</button>
+      `;
+      row.querySelector('.remove-row').addEventListener('click', () => row.remove());
+      phonesWrap.appendChild(row);
+    }
+    function addEmailRow(value) {
+      const row = document.createElement('div');
+      row.className = 'multi-row';
+      row.innerHTML = `
+        <input type="email" class="email-value" placeholder="email@example.com" value="${escapeHtml(value || '')}" />
+        <button type="button" class="remove-row">×</button>
+      `;
+      row.querySelector('.remove-row').addEventListener('click', () => row.remove());
+      emailsWrap.appendChild(row);
+    }
+
+    phones.forEach(p => addPhoneRow(p.label, p.number));
+    emails.forEach(e => addEmailRow(e));
+
+    form.querySelector('#cs-add-phone').addEventListener('click', () => addPhoneRow('', ''));
+    form.querySelector('#cs-add-email').addEventListener('click', () => addEmailRow(''));
+    form.querySelector('#cs-back-btn').addEventListener('click', () => showStage('upload'));
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const name = fd.get('name') || '연락처';
+      const company = fd.get('company') || '';
+      const title = fd.get('title') || '';
+      const address = fd.get('address') || '';
+      const website = fd.get('website') || '';
+
+      const phoneRows = Array.from(phonesWrap.querySelectorAll('.multi-row')).map(r => ({
+        label: r.querySelector('.phone-label').value,
+        number: r.querySelector('.phone-number').value
+      })).filter(p => p.number.trim());
+
+      const emailRows = Array.from(emailsWrap.querySelectorAll('.multi-row')).map(r => r.querySelector('.email-value').value)
+        .filter(v => v.trim());
+
+      const vcard = buildVCard({ name, company, title, address, website, phones: phoneRows, emails: emailRows });
+      downloadVCard(vcard, name);
+
+      root.querySelector('#cs-done-name').textContent = name;
+      showStage('done');
+    });
+  }
+
+  function typeForLabel(label) {
+    if (!label) return 'CELL';
+    if (label.includes('휴대') || /mobile|cell/i.test(label)) return 'CELL';
+    if (label.includes('팩스') || /fax/i.test(label)) return 'FAX';
+    if (label.includes('회사') || label.includes('사무') || /work|office/i.test(label)) return 'WORK';
+    return 'CELL';
+  }
+
+  function buildVCard({ name, company, title, address, website, phones, emails }) {
+    const lines = ['BEGIN:VCARD', 'VERSION:3.0'];
+    lines.push(`N:;${name};;;`);
+    lines.push(`FN:${name}`);
+    if (company) lines.push(`ORG:${company}`);
+    if (title) lines.push(`TITLE:${title}`);
+    phones.forEach(p => { lines.push(`TEL;TYPE=${typeForLabel(p.label)}:${p.number}`); });
+    emails.forEach(e => { lines.push(`EMAIL:${e}`); });
+    if (address) lines.push(`ADR;TYPE=WORK:;;${address};;;;`);
+    if (website) lines.push(`URL:${website}`);
+    lines.push('END:VCARD');
+    return lines.join('\r\n');
+  }
+
+  function downloadVCard(vcardText, name) {
+    const blob = new Blob([vcardText], { type: 'text/vcard;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${name || 'contact'}.vcf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  root.querySelector('#cs-restart-btn').addEventListener('click', () => {
+    imageBase64 = null;
+    previewArea.innerHTML = '';
+    fileInput.value = '';
+    showStage('upload');
+  });
+})();
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>
