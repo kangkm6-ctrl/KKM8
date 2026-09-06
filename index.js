@@ -65,7 +65,11 @@ app.post('/scan-card', async (req, res) => {
           }
         ],
         generationConfig: {
-          responseMimeType: 'application/json'
+          responseMimeType: 'application/json',
+          maxOutputTokens: 512,
+          thinkingConfig: {
+            thinkingBudget: 0
+          }
         }
       })
     });
