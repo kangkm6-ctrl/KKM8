@@ -14,11 +14,11 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const APP_SECRET = process.env.APP_SECRET || '';
 
 // 첫 모델이 붐비면 순서대로 다음 모델로 자동 전환합니다.
+// (이 계정은 gemini-2.5-flash를 못 쓰는 신규 계정이라 3.6이 기본입니다)
 const MODEL_CANDIDATES = [
   process.env.GEMINI_MODEL,
-  'gemini-2.5-flash',
-  'gemini-flash-latest',
-  'gemini-2.5-flash-lite'
+  'gemini-3.6-flash',
+  'gemini-flash-latest'
 ].filter(Boolean);
 
 function thinkingConfigFor(model) {
@@ -83,7 +83,7 @@ app.post('/scan-card', async (req, res) => {
     for (const model of MODEL_CANDIDATES) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
       const requestBody = buildBody(model);
-      const ATTEMPTS_PER_MODEL = 2;
+      const ATTEMPTS_PER_MODEL = 3;
 
       for (let attempt = 1; attempt <= ATTEMPTS_PER_MODEL; attempt++) {
         geminiRes = await fetch(url, {
@@ -99,7 +99,7 @@ app.post('/scan-card', async (req, res) => {
         if (geminiRes.ok) break outer;
         if (!isOverloaded) break outer; // 붐빔이 아닌 다른 에러는 바로 응답
         if (attempt < ATTEMPTS_PER_MODEL) {
-          await new Promise((r) => setTimeout(r, 1200 * attempt));
+          await new Promise((r) => setTimeout(r, 1500 * attempt));
         }
         // 마지막 시도까지 붐비면 다음 후보 모델로 넘어감 (for...of 바깥 루프 계속)
       }
