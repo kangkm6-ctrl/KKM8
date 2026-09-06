@@ -11,7 +11,7 @@ app.use(cors()); // 필요하면 특정 origin만 허용하도록 좁힐 수 있
 app.use(express.json({ limit: '15mb' })); // 명함 사진 base64를 담기 위해 넉넉히 설정
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 const APP_SECRET = process.env.APP_SECRET || '';
 
 const PROMPT = `이 명함 이미지를 읽고 정보를 아래 JSON 형식으로만 응답하세요. 다른 설명 없이 순수 JSON만 출력하세요. 값이 없으면 빈 문자열이나 빈 배열로 두세요.
