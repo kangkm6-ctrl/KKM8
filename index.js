@@ -18,7 +18,7 @@ const MODEL_CANDIDATES = [
   process.env.GEMINI_MODEL,
   'gemini-3.6-flash',
   'gemini-2.5-flash-lite',
-  'gemini-2.0-flash-lite'
+  'gemini-3.5-flash-lite'
 ].filter(Boolean);
 
 function thinkingConfigFor(model) {
@@ -81,6 +81,7 @@ app.post('/scan-card', async (req, res) => {
     let geminiRes;
     let data;
     let lastAttemptedModel;
+    const attemptLog = []; // 실패 원인을 전부 기록해뒀다가, 끝까지 실패하면 한 번에 보여줌
 
     outer:
     for (const model of MODEL_CANDIDATES) {
@@ -99,7 +100,10 @@ app.post('/scan-card', async (req, res) => {
 
         if (geminiRes.ok) break outer;
 
-        const errMsg = (data && data.error && data.error.message) || '';
+        const errMsg = (data && data.error && data.error.message) || `HTTP ${geminiRes.status}`;
+        attemptLog.push(`[${model}] ${errMsg}`);
+        console.log(`scan-card 실패: [${model}] ${errMsg}`);
+
         const isTransientOverload = geminiRes.status === 503 || /high demand|overloaded|unavailable/i.test(errMsg);
 
         if (isTransientOverload && attempt < ATTEMPTS_PER_MODEL) {
@@ -111,8 +115,7 @@ app.post('/scan-card', async (req, res) => {
     }
 
     if (!geminiRes.ok) {
-      const message = (data && data.error && data.error.message) || 'Gemini API 오류';
-      return res.status(geminiRes.status).json({ error: `[${lastAttemptedModel}] ${message}` });
+      return res.status(geminiRes.status).json({ error: attemptLog.join(' / ') || 'Gemini API 오류' });
     }
 
     const candidate = data.candidates && data.candidates[0];
