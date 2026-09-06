@@ -68,7 +68,7 @@ app.post('/scan-card', async (req, res) => {
           responseMimeType: 'application/json',
           maxOutputTokens: 512,
           thinkingConfig: {
-            thinkingBudget: 0
+            thinkingLevel: 'minimal'
           }
         }
       })
