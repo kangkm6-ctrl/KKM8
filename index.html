@@ -368,6 +368,8 @@
 
   async function runScan() {
     showStage('loading');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000); // 45초 넘으면 포기하고 에러 표시
     try {
       const response = await fetch(PROXY_URL, {
         method: 'POST',
@@ -378,15 +380,21 @@
         body: JSON.stringify({
           imageBase64: imageBase64,
           mediaType: imageMediaType
-        })
+        }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
       const parsed = await response.json();
       if (parsed.error) throw new Error(parsed.error);
       renderForm(parsed);
       showStage('form');
     } catch (err) {
+      clearTimeout(timeoutId);
       showStage('upload');
-      previewArea.insertAdjacentHTML('beforeend', `<div class="error-box">읽기에 실패했습니다: ${escapeHtml(err.message)}. 다시 시도해 주세요.</div>`);
+      const msg = err.name === 'AbortError'
+        ? '서버 응답이 45초 넘게 없어 중단했습니다. 서버가 깨어나는 중일 수 있으니 잠시 후 다시 시도해 주세요.'
+        : err.message;
+      previewArea.insertAdjacentHTML('beforeend', `<div class="error-box">읽기에 실패했습니다: ${escapeHtml(msg)}. 다시 시도해 주세요.</div>`);
     }
   }
 
