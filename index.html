@@ -422,6 +422,10 @@
         <label>직함</label>
         <input type="text" name="title" value="${escapeHtml(data.title || '')}" />
       </div>
+      <div class="field-group">
+        <label>취급</label>
+        <input type="text" name="handling" value="" placeholder="예: 스핀들, 조인트 (직접 입력)" />
+      </div>
 
       <hr class="divider" />
 
@@ -487,6 +491,7 @@
       const name = fd.get('name') || '연락처';
       const company = fd.get('company') || '';
       const title = fd.get('title') || '';
+      const handling = fd.get('handling') || '';
       const address = fd.get('address') || '';
       const website = fd.get('website') || '';
 
@@ -498,10 +503,11 @@
       const emailRows = Array.from(emailsWrap.querySelectorAll('.multi-row')).map(r => r.querySelector('.email-value').value)
         .filter(v => v.trim());
 
-      const vcard = buildVCard({ name, company, title, address, website, phones: phoneRows, emails: emailRows });
+      const vcard = buildVCard({ name, company, title, handling, address, website, phones: phoneRows, emails: emailRows });
       downloadVCard(vcard, name);
 
-      root.querySelector('#cs-done-name').textContent = name;
+      const displayName = handling ? `${name} (${handling})` : name;
+      root.querySelector('#cs-done-name').textContent = displayName;
       showStage('done');
     });
   }
@@ -522,12 +528,39 @@
       .replace(/;/g, '\\;');
   }
 
-  function buildVCard({ name, company, title, address, website, phones, emails }) {
+  const KOREAN_COMPOUND_SURNAMES = ['남궁', '황보', '제갈', '사공', '선우', '서문', '독고', '동방', '어금', '망절'];
+
+  function splitKoreanName(fullName) {
+    const trimmed = String(fullName || '').trim();
+    // 이름에 공백이 있으면(영문식 "Given Family" 등) 그대로 성/이름을 나눠씀
+    if (/\s/.test(trimmed)) {
+      const parts = trimmed.split(/\s+/);
+      const given = parts.slice(0, -1).join(' ');
+      const family = parts[parts.length - 1];
+      return { family, given };
+    }
+    // 한글 2글자 성씨(남궁, 황보 등) 우선 확인
+    for (const surname of KOREAN_COMPOUND_SURNAMES) {
+      if (trimmed.startsWith(surname) && trimmed.length > surname.length) {
+        return { family: surname, given: trimmed.slice(surname.length) };
+      }
+    }
+    // 일반적인 한글 성씨: 첫 글자가 성
+    if (trimmed.length >= 2 && /[가-힣]/.test(trimmed[0])) {
+      return { family: trimmed[0], given: trimmed.slice(1) };
+    }
+    // 그 외(한 글자 이름, 비한글 등)는 성 없이 이름에만 전체를 넣음
+    return { family: '', given: trimmed };
+  }
+
+  function buildVCard({ name, company, title, handling, address, website, phones, emails }) {
     const lines = ['BEGIN:VCARD', 'VERSION:3.0'];
-    const safeName = vEsc(name);
-    lines.push(`N:;${safeName};;;`);
-    lines.push(`FN:${safeName}`);
-    if (company) lines.push(`ORG:${vEsc(company)}`);
+    const displayName = handling ? `${name} (${handling})` : name;
+    const displayCompany = handling ? `${company} (${handling})` : company;
+    const { family, given } = splitKoreanName(name); // 성/이름 분리는 원래 이름 기준(취급 내용 안 섞임)
+    lines.push(`N:${vEsc(family)};${vEsc(given)};;;`);
+    lines.push(`FN:${vEsc(displayName)}`);
+    if (company) lines.push(`ORG:${vEsc(displayCompany)}`);
     if (title) lines.push(`TITLE:${vEsc(title)}`);
     phones.forEach(p => { lines.push(`TEL;TYPE=${typeForLabel(p.label)}:${p.number.replace(/[^\d+#*]/g, m => m)}`); });
     emails.forEach(e => { lines.push(`EMAIL;TYPE=INTERNET:${e.trim()}`); });
