@@ -13,12 +13,12 @@ app.use(express.json({ limit: '15mb' })); // 명함 사진 base64를 담기 위�
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const APP_SECRET = process.env.APP_SECRET || '';
 
-// 첫 모델이 붐비면 순서대로 다음 모델로 자동 전환합니다.
-// (이 계정은 gemini-2.5-flash를 못 쓰는 신규 계정이라 3.6이 기본입니다)
+// 3.6-flash를 먼저 쓰고, 한도 초과·에러 시 순서대로 다음 후보 모델로 자동 전환합니다.
 const MODEL_CANDIDATES = [
   process.env.GEMINI_MODEL,
   'gemini-3.6-flash',
-  'gemini-flash-latest'
+  'gemini-2.5-flash-lite',
+  'gemini-2.0-flash-lite'
 ].filter(Boolean);
 
 function thinkingConfigFor(model) {
@@ -76,14 +76,18 @@ app.post('/scan-card', async (req, res) => {
       });
     }
 
-    // 모델이 붐비면(고수요) 같은 모델로 재시도하다가, 그래도 안 되면 다음 후보 모델로 넘어갑니다.
+    // 모델별로 짧게 재시도(진짜 일시적 혼잡일 때만) 후, 안 되면 바로 다음 후보 모델로 넘어갑니다.
+    // (할당량 초과·모델 접근 불가 등은 같은 모델을 더 시도해봐야 소용없으므로 즉시 다음 모델로)
     let geminiRes;
     let data;
+    let lastAttemptedModel;
+
     outer:
     for (const model of MODEL_CANDIDATES) {
+      lastAttemptedModel = model;
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
       const requestBody = buildBody(model);
-      const ATTEMPTS_PER_MODEL = 3;
+      const ATTEMPTS_PER_MODEL = 2;
 
       for (let attempt = 1; attempt <= ATTEMPTS_PER_MODEL; attempt++) {
         geminiRes = await fetch(url, {
@@ -93,21 +97,22 @@ app.post('/scan-card', async (req, res) => {
         });
         data = await geminiRes.json();
 
-        const isOverloaded = geminiRes.status === 503 ||
-          (data && data.error && /high demand|overloaded|unavailable/i.test(data.error.message || ''));
-
         if (geminiRes.ok) break outer;
-        if (!isOverloaded) break outer; // 붐빔이 아닌 다른 에러는 바로 응답
-        if (attempt < ATTEMPTS_PER_MODEL) {
+
+        const errMsg = (data && data.error && data.error.message) || '';
+        const isTransientOverload = geminiRes.status === 503 || /high demand|overloaded|unavailable/i.test(errMsg);
+
+        if (isTransientOverload && attempt < ATTEMPTS_PER_MODEL) {
           await new Promise((r) => setTimeout(r, 1500 * attempt));
+          continue; // 같은 모델로 한 번 더
         }
-        // 마지막 시도까지 붐비면 다음 후보 모델로 넘어감 (for...of 바깥 루프 계속)
+        break; // 이 모델은 포기하고 다음 후보 모델로 (for...of 계속)
       }
     }
 
     if (!geminiRes.ok) {
       const message = (data && data.error && data.error.message) || 'Gemini API 오류';
-      return res.status(geminiRes.status).json({ error: message });
+      return res.status(geminiRes.status).json({ error: `[${lastAttemptedModel}] ${message}` });
     }
 
     const candidate = data.candidates && data.candidates[0];
