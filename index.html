@@ -558,8 +558,10 @@
     const lines = ['BEGIN:VCARD', 'VERSION:3.0'];
     const displayName = handling ? `${name} (${handling})` : name;
     const displayCompany = handling ? `${company} (${handling})` : company;
-    const { family, given } = splitKoreanName(name); // 성/이름 분리는 원래 이름 기준(취급 내용 안 섞임)
-    lines.push(`N:${vEsc(family)};${vEsc(given)};;;`);
+    const { family, given } = splitKoreanName(name);
+    // 아이폰 연락처 화면 맨 위 큰 이름은 N(성/이름)으로 조립되므로, 여기에도 취급 내용을 붙여야 실제로 보입니다.
+    const givenWithHandling = handling ? `${given} (${handling})` : given;
+    lines.push(`N:${vEsc(family)};${vEsc(givenWithHandling)};;;`);
     lines.push(`FN:${vEsc(displayName)}`);
     if (company) lines.push(`ORG:${vEsc(displayCompany)}`);
     if (title) lines.push(`TITLE:${vEsc(title)}`);
