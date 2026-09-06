@@ -530,8 +530,12 @@
   }
 
   function downloadVCard(vcardText, name) {
-    const dataUri = 'data:text/vcard;charset=utf-8,' + encodeURIComponent(vcardText);
-    window.open(dataUri, '_blank');
+    const blob = new Blob([vcardText], { type: 'text/vcard' });
+    const url = URL.createObjectURL(blob);
+    // 새 창을 열지 않고, 현재 화면에서 바로 이동시켜 연락처 미리보기를 띄웁니다.
+    // (홈 화면에 설치된 앱 모드에서는 새 창 열기가 느리거나 막힐 수 있어 이 방식이 더 안정적입니다)
+    window.location.href = url;
+    setTimeout(() => URL.revokeObjectURL(url), 15000);
   }
 
   root.querySelector('#cs-restart-btn').addEventListener('click', () => {

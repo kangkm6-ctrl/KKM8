@@ -1,6 +1,6 @@
 // 캐시 버전을 올리면 이전 캐시가 자동 정리됩니다.
 // Safari에서 배포 후 화면이 안 바뀌면 이 숫자를 올려서 다시 배포하세요.
-const CACHE_VERSION = 'card-scanner-v9';
+const CACHE_VERSION = 'card-scanner-v10';
 const APP_SHELL = [
   './index.html',
   './manifest.json',
