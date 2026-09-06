@@ -251,6 +251,11 @@
 (function () {
   const root = document.getElementById('card-scanner-root');
 
+  // ▼▼▼ Render에 프록시 서버 배포 후 이 두 값을 반드시 바꿔주세요 ▼▼▼
+  const PROXY_URL = 'https://kkm8.onrender.com/scan-card';
+  const APP_SECRET = 'myeongham2026';
+  // ▲▲▲ 서버의 APP_SECRET 환경변수와 반드시 동일해야 합니다 ▲▲▲
+
   root.innerHTML = `
   <div class="panel">
     <div class="eyebrow-row">
@@ -345,44 +350,19 @@
   async function runScan() {
     showStage('loading');
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch(PROXY_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-app-secret': APP_SECRET
+        },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1000,
-          messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'image',
-                  source: { type: 'base64', media_type: imageMediaType, data: imageBase64 }
-                },
-                {
-                  type: 'text',
-                  text: `이 명함 이미지를 읽고 정보를 아래 JSON 형식으로만 응답하세요. 다른 설명, 코드블록, 접두어 없이 순수 JSON만 출력하세요. 값이 없으면 빈 문자열이나 빈 배열로 두세요.
-{
-  "name": "",
-  "company": "",
-  "title": "",
-  "phones": [{"label": "휴대전화", "number": ""}],
-  "emails": [""],
-  "address": "",
-  "website": ""
-}
-phones의 label은 "휴대전화", "회사전화", "팩스" 중 문맥에 맞게 고르세요.`
-                }
-              ]
-            }
-          ]
+          imageBase64: imageBase64,
+          mediaType: imageMediaType
         })
       });
-      const data = await response.json();
-      if (data.error) throw new Error(data.error.message || '분석 실패');
-      const text = data.content.map(b => b.text || '').join('').trim();
-      const clean = text.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
-      const parsed = JSON.parse(clean);
+      const parsed = await response.json();
+      if (parsed.error) throw new Error(parsed.error);
       renderForm(parsed);
       showStage('form');
     } catch (err) {
